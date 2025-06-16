@@ -1,5 +1,5 @@
 //@version=5
-indicator("OTA CLICK Demand Zone Only", overlay=true)
+indicator("OTA CLICK Supply & Demand Zones", overlay=true)
 
 // === Inputs ===
 zoneWidth = input.int(20, title="Zone Extension Bars")
@@ -13,17 +13,20 @@ isBaseCandle(idx) =>
 // === Detection Logic ===
 baseFound = isBaseCandle(1) and isBaseCandle(2) and isBaseCandle(3)
 rallyFromBase = close > high[1] and ((close - low[1]) / low[1]) * 100 > impulseThreshold
+dropFromBase = close < low[1] and ((high[1] - close) / high[1]) * 100 > impulseThreshold
 
 // === Persistent Objects ===
 var box demandBox = na
 var label demandLabel = na
+var box supplyBox = na
+var label supplyLabel = na
 
 // === Demand Zone Drawing ===
 if baseFound and rallyFromBase
     demandLow = math.min(math.min(low[1], low[2]), low[3])
     demandHigh = math.max(math.max(high[1], high[2]), high[3])
 
-    // Delete previous box and label
+    // Delete previous demand box and label
     if not na(demandBox)
         box.delete(demandBox)
     if not na(demandLabel)
@@ -39,7 +42,7 @@ if baseFound and rallyFromBase
         bgcolor=color.new(color.green, 85)
     )
 
-    // Create label
+    // Create demand label
     if showLabels
         demandLabel := label.new(
             x=bar_index,
@@ -47,5 +50,37 @@ if baseFound and rallyFromBase
             text="Demand Zone",
             style=label.style_label_up,
             color=color.green,
+            textcolor=color.white
+        )
+
+// === Supply Zone Drawing ===
+if baseFound and dropFromBase
+    supplyHigh = math.max(math.max(high[1], high[2]), high[3])
+    supplyLow = math.min(math.min(low[1], low[2]), low[3])
+
+    // Delete previous supply box and label
+    if not na(supplyBox)
+        box.delete(supplyBox)
+    if not na(supplyLabel)
+        label.delete(supplyLabel)
+
+    // Create supply zone box
+    supplyBox := box.new(
+        left=bar_index,
+        right=bar_index + zoneWidth,
+        top=supplyHigh,
+        bottom=supplyLow,
+        border_color=color.red,
+        bgcolor=color.new(color.red, 85)
+    )
+
+    // Create supply label
+    if showLabels
+        supplyLabel := label.new(
+            x=bar_index,
+            y=supplyHigh,
+            text="Supply Zone",
+            style=label.style_label_down,
+            color=color.red,
             textcolor=color.white
         )
